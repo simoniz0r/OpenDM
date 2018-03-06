@@ -1,0 +1,3 @@
+SESSION_START="gnome-session"
+SESSION_EXIT="gnome-sessioin-quit --logout --no-prompt --force"
+SESSION_AUTOSTART=""

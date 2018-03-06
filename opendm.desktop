@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=OpenDM Settings
+GenericName=Display Manager Settings
+Comment=Configure OpenDM
+Exec=opendm config
+Categories=Settings;
+Icon=settings
+StartupNotify=false

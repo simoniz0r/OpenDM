@@ -1,0 +1,3 @@
+SESSION_START="startlxqt"
+SESSION_EXIT="lxqt-leave --logout"
+SESSION_AUTOSTART=""

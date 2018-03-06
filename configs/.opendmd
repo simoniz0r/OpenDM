@@ -1,0 +1,22 @@
+# Open DM daemon-ish file for use without autologin enabled
+
+if [ -z "$OPENDM_TTY" ]; then
+    export OPENDM_TTY="tty1"
+fi
+
+if [ -z "$DISPLAY" ] && [ "$(ps ax | grep $$ | grep -v grep | awk '{ print $2 }')" = "$OPENDM_TTY" ]; then
+    opendm
+    rm -f /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
+    if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/logout" ]; then
+        clear
+        exit 0
+    elif [ -f "/tmp/opendm/$USER/reboot" ]; then
+        /tmp/opendm/"$USER"/reboot &
+    elif [ -f "/tmp/opendm/$USER/shutdown" ]; then
+        /tmp/opendm/"$USER"/shutdown &
+    elif [ -f "/tmp/opendm/$USER/$OPENDM_TTY/exit" ]; then
+        . ~/.config/opendm/.opendmstart
+    else
+        exit 0
+    fi
+fi

@@ -1,0 +1,3 @@
+SESSION_START="bspwm"
+SESSION_EXIT="bspc quit"
+SESSION_AUTOSTART=""

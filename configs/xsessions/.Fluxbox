@@ -1,0 +1,3 @@
+SESSION_START="startfluxbox"
+SESSION_EXIT="pkill -SIGTERM -f xinit"
+SESSION_AUTOSTART=""

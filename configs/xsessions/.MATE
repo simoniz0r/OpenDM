@@ -1,0 +1,3 @@
+SESSION_START="mate-session"
+SESSION_EXIT="mate-session-save --force-logout"
+SESSION_AUTOSTART=""

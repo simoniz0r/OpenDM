@@ -1,0 +1,3 @@
+SESSION_START="budgie-desktop"
+SESSION_EXIT="budgie-session --logout"
+SESSION_AUTOSTART=""

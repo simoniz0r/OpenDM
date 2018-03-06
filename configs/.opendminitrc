@@ -1,0 +1,108 @@
+#!/bin/bash
+#
+# OpenDM xinitrc file
+# This script is called from 'startx' when 'opendm' is started without any arguments and no $DISPLAY is set
+#
+
+#
+# In case everything goes wrong, we at least fall back to a plain xterm
+#
+failsafe="xterm -ls -T Failsafe -geometry 80x24-0-0"
+trap "exec $failsafe" EXIT SIGHUP SIGINT SIGPIPE SIGTERM SIGIO
+
+#
+# Some bash (1 and 2) settings to avoid trouble on a
+# failed program call.
+#
+set +e > /dev/null 2>&1
+set +u > /dev/null 2>&1
+set +o posix  > /dev/null 2>&1
+if type shopt > /dev/null 2>&1 ; then
+    shopt -s execfail
+else
+    no_exit_on_failed_exec=1
+fi
+
+#
+# Source common code shared between the
+# X session and X init scripts
+#
+if [ -f "/etc/X11/xinit/xinitrc.common" ]; then
+    . /etc/X11/xinit/xinitrc.common
+fi
+
+if [ -f "$HOME/.config/opendm/variables.conf" ]; then
+    . "$HOME"/.config/opendm/variables.conf
+fi
+if [ -z "$OPENDM_TTY" ]; then
+    export OPENDM_TTY="tty1"
+fi
+
+#
+# Special for twm
+#
+case "$WINDOWMANAGER" in
+    *twm) xsetroot -solid darkslateblue
+esac
+
+#
+# Uncomment next lines to activate asking for ssh passphrase
+#
+# if test -S "$SSH_AUTH_SOCK" -a -x "$SSH_ASKPASS"; then
+#       ssh-add < /dev/null
+# fi
+
+# day planer deamon
+# pland &
+
+# 
+# finally start the window manager
+#
+unset WINDOW_MANAGER STARTUP
+
+# Use $HOME/.fehbg if present to set OpenDM's background
+#
+if [ -x "$HOME/.fehbg" ]; then
+    "$HOME"/.fehbg
+fi
+
+# export XDG variables
+#
+export XDG_SESSION_TYPE="x11"
+
+#
+# Add your own lines here...
+#
+
+
+
+# Remove leftover files in /tmp
+#
+if [ -f "/tmp/opendm/exit" ]; then  
+    rm -f /tmp/opendm/exit
+    if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
+        mv /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession /tmp/opendm/"$USER"/"$OPENDM_TTY"/lastsession
+    fi
+fi
+if [ -f "/tmp/opendm/logout" ] || [ -f "/tmp/opendm/reboot" ] || [ -f "/tmp/opendm/shutdown" ]; then
+    rm -rf /tmp/opendm/"$USER"/"$OPENDM_TTY"
+    rm -f /tmp/opendm/logout
+    rm -f /tmp/opendm/reboot
+    rm -f /tmp/opendm/shutdown
+    mkdir -p /tmp/opendm/"$USER"/"$OPENDM_TTY"
+fi
+
+# Start OpenDM
+#
+if [ "$OPENDM_PASSWORD_CHECK" = "TRUE" ]; then
+    opendm --password-check
+elif [ "$OPENDM_AUTOSTART_DEFAULT" = "TRUE" ]; then
+    opendm --auto-start
+else
+    opendm "$1"
+fi
+
+# Run 'exec exit 0' so X session ends
+#
+exec exit 0
+

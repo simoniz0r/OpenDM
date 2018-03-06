@@ -1,0 +1,2 @@
+SESSION_START="jwm"
+SESSION_EXIT="jwm -exit"

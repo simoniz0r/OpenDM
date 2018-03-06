@@ -1,0 +1,3 @@
+SESSION_START="openbox-session"
+SESSION_EXIT="openbox --exit"
+SESSION_AUTOSTART="autostart.sh"

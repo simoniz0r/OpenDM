@@ -1,0 +1,3 @@
+SESSION_START="startlxde"
+SESSION_EXIT="pkill -SIGTERM -f lxsession"
+SESSION_AUTOSTART=""

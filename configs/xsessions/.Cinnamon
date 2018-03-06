@@ -1,0 +1,3 @@
+SESSION_START="cinnamon-session"
+SESSION_EXIT="cinnamon-session-quit --logout --force"
+SESSION_AUTOSTART=""

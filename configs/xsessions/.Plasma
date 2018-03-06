@@ -1,0 +1,4 @@
+SESSION_START="startkde"
+SESSION_EXIT="pkill -SIGTERM -f xinit"
+MIGHT_USE_SESSION_EXIT="qdbus org.kde.kmserver /KSMServer logout 0 0 0"
+SESSION_AUTOSTART=""

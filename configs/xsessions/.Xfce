@@ -1,0 +1,3 @@
+SESSION_START="startxfce"
+SESSION_EXIT="xfce4-session-logout --logout"
+SESSION_AUTOSTART=""
