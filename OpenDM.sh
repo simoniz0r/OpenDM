@@ -142,6 +142,11 @@ function logoutselect() {
                     --width=350 --height=200 --borders=10 --separator="" --form --item-separator="|" --image="/tmp/opendm.png" --button="Back|gtk-cancel":1 --button=gtk-ok:0 \
                     --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="Shutdown?\n":LBL "Shutdown?\n" --field="":CB "Restart|Shutdown")"
                 fi
+                case $? in
+                    1)
+                        supasswordcheck
+                        ;;
+                esac
                 ;;
             LOGOUT)
                 if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
@@ -583,7 +588,7 @@ function editvariables() {
                 if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
                     qarma --title="OpenDM" --info --text="Changes to OpenDM Variables have been saved.<br>Changes will take effect on next login!"
                 else
-                    yad --center --title="OpenDM" --info --text="Changes to OpenDM Variables have been saved.<br>Changes will take effect on next login!" --button=gtk-ok:0
+                    yad --center --title="OpenDM" --info --text="Changes to OpenDM Variables have been saved.\nChanges will take effect on next login!" --button=gtk-ok:0
                 fi
                 opendmconfig
             fi
@@ -703,7 +708,7 @@ function supasswordcheck() {
         if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
             SU_PASSWORD_CHECK="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --hide-text --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Enter password for $USER<br/></h2>" --cancel-label="Shutdown")"
         else
-            SU_PASSWORD_CHECK="$(yad --center --width=350 --height=200 --image="/tmp/opendm.png" --title="OpenDM" --entry --hide-text --text="OpenDM\n\nEnter password for $USER" --button="Shutdown|gtk-cancel":1 --button=gtk-ok:0)"
+            SU_PASSWORD_CHECK="$(yad --center --width=350 --height=200 --image="/tmp/opendm.png" --title="OpenDM" --entry --hide-text --text="OpenDM\n\nEnter password for $USER" --button=gtk-cancel:1 --button=gtk-ok:0)"
         fi
         case $? in
             1)
