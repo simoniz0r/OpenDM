@@ -703,7 +703,7 @@ function supasswordcheck() {
         if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
             SU_PASSWORD_CHECK="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --hide-text --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Enter password for $USER<br/></h2>" --cancel-label="Shutdown")"
         else
-            SU_PASSWORD_CHECK="$(yad --center --width=350 --height=200 --image="/tmp/opendm.png" --title="OpenDM" --entry --hide-text --text="OpenDM\n\nEnter password for $USER" --button="Shutdown|gkt-cancel":1 --button=gtk-ok:0)"
+            SU_PASSWORD_CHECK="$(yad --center --width=350 --height=200 --image="/tmp/opendm.png" --title="OpenDM" --entry --hide-text --text="OpenDM\n\nEnter password for $USER" --button="Shutdown|gtk-cancel":1 --button=gtk-ok:0)"
         fi
         case $? in
             1)
