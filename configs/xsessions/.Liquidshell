@@ -1,0 +1,3 @@
+SESSION_START="liquidshell"
+SESSION_EXIT="pkill liquidshell"
+SESSION_AUTOSTART="autostart.sh"
