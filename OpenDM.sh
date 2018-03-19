@@ -49,7 +49,7 @@ function supasswordcheck() {
         SESSION_CHOICE="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
         --width=350 --height=200 --form --separator="|" --item-separator="|" --image="/tmp/opendm.png" --button="Shutdown|gtk-cancel":1 --button=gtk-ok:0 \
         --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="Enter password for $USER\n":LBL "Enter password for $USER\n" --field="":CB "$SESSION_LIST" \
-        --field="":H)"
+        --field="":H | cut -f3- -d'|')"
     fi
     case $? in
         1)
