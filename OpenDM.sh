@@ -39,19 +39,56 @@ function generatesessionlist() {
     echo -n "Other...")"
 }
 
+# function that displays session choice and password entry.
+function supasswordcheck() {
+    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
+        SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Shutdown" \
+        --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Enter password for $USER<br/></h2>" \
+        --add-combo="" --combo-values=$SESSION_LIST --add-password="")"
+    else
+        SESSION_CHOICE="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
+        --width=350 --height=200 --separator="|" --form --item-separator="|" --image="/tmp/opendm.png" --button="Shutdown|gtk-cancel":1 --button=gtk-ok:0 \
+        --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="Enter password for$USER\n":LBL "Enter password for$USER\n" --field="":CB "$SESSION_LIST" \
+        --field="":H "")"
+    fi
+    case $? in
+        1)
+            logoutselect "SHUTDOWN"
+            ;;
+    esac
+    SU_PASSWORD_CHECK="$(echo $SESSION_CHOICE | cut -f2 -d'|')"
+    SESSION_CHOICE="$(echo $SESSION_CHOICE | cut -f1 -d'|')"
+    # use su -c true "$USER" to check password entry
+    if ! echo "$SU_PASSWORD_CHECK" | su -c true "$USER"; then
+        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
+            qarma --title="OpenDM" --error --text="Incorrect password for $USER!"
+        else
+            yad --borders=10 --on-top --center --title="OpenDM" --error --text="Incorrect password for $USER!" --button=gtk-ok:0
+        fi
+        exit 1
+    fi
+}
+
 # Function that provides session selection based on files in ~/.config/opendm/xsessions and runs 'exec' on the user's choice
 function sessionselect() {
     generatesessionlist
     # Use qarma to provide a GUI with a list of enabled sessions, OpenDM's settings menu, and ability to launch non listed session through 'Other...'
-    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-        SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Logout" \
-        --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>$USER@$HOST<br/></h2>" \
-        --add-combo="" --combo-values=$SESSION_LIST)"
-    else
-        SESSION_CHOICE="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
-        --width=350 --height=200 --separator="" --form --item-separator="|" --image="/tmp/opendm.png" --button="Logout|gtk-cancel":1 --button=gtk-ok:0 \
-        --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="$USER@$HOST\n":LBL "$USER@$HOST\n" --field="":CB "$SESSION_LIST")"
-    fi
+    case $1 in
+        PASSWORD_CHECK)
+            supasswordcheck || exit 0
+            ;;
+        *)
+            if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
+                SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Logout" \
+                --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>$USER@$HOST<br/></h2>" \
+                --add-combo="" --combo-values=$SESSION_LIST)"
+            else
+                SESSION_CHOICE="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
+                --width=350 --height=200 --separator="" --form --item-separator="|" --image="/tmp/opendm.png" --button="Logout|gtk-cancel":1 --button=gtk-ok:0 \
+                --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="$USER@$HOST\n":LBL "$USER@$HOST\n" --field="":CB "$SESSION_LIST")"
+            fi
+            ;;
+    esac
     # Go to logoutselect function if no choice was made; "LOGOUT" tells logoutselect function not to provide option to exit session and to return to sessionselect if no logout choice is made
     if [ -z "$SESSION_CHOICE" ]; then
         logoutselect "LOGOUT"
@@ -701,37 +738,6 @@ function opendmconfig() {
     esac
 }
 
-function supasswordcheck() {
-    if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/lastsession" ]; then
-        sessionselect
-    else
-        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-            SU_PASSWORD_CHECK="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --hide-text --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Enter password for $USER<br/></h2>" --cancel-label="Shutdown")"
-        else
-            SU_PASSWORD_CHECK="$(yad --borders=10 --on-top --center --width=350 --height=200 --image="/tmp/opendm.png" --title="OpenDM" --entry --hide-text --text="OpenDM\n\nEnter password for $USER" --button=gtk-cancel:1 --button=gtk-ok:0)"
-        fi
-        case $? in
-            1)
-                logoutselect "SHUTDOWN"
-                ;;
-        esac
-        if echo "$SU_PASSWORD_CHECK" | su -c true "$USER"; then
-            if [ "$OPENDM_AUTOSTART_DEFAULT" = "TRUE" ]; then
-                autostart
-            else
-                sessionselect
-            fi
-        else
-            if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                qarma --title="OpenDM" --error --text="Incorrect password for $USER!"
-            else
-                yad --borders=10 --on-top --center --title="OpenDM" --error --text="Incorrect password for $USER!" --button=gtk-ok:0
-            fi
-            exit 0
-        fi
-    fi
-}
-
 # Start function to check if $DISPLAY is set and running on $OPENDM_TTY; use startx if $DISPLAY is not set and running on $OPENDM_TTY
 function startchecks() {
     if [ -z "$DISPLAY" ] && [ -f "$HOME/.config/opendm/.opendminitrc" ] && [ "$(ps ax | grep $$ | grep -v grep | awk '{ print $2 }')" = "$OPENDM_TTY" ]; then
@@ -864,7 +870,11 @@ case $1 in
         ;;
     # Used internally by OpenDM to execute the supasswordcheck function
     --password-check)
-        supasswordcheck
+        if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/lastsession" ]; then
+            sessionselect
+        else
+            sessionselect "PASSWORD_CHECK"
+        fi
         ;;
     # Used internally by OpenDM to execute the config function
     --config-start)
