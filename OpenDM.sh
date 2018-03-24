@@ -60,6 +60,7 @@ function supasswordcheck() {
 
 # Function that provides session selection based on files in ~/.config/opendm/xsessions and runs 'exec' on the user's choice
 function sessionselect() {
+    type openbox > /dev/null 2>&1 && ! pgrep openbox && [ -f "$HOME/.config/opendm/.openboxrc.xml" ] && openbox --config-file ~/.config/opendm/.openboxrc.xml & disown
     generatesessionlist
     # Use qarma to provide a GUI with a list of enabled sessions, OpenDM's settings menu, and ability to launch non listed session through 'Other...'
     case $1 in
@@ -100,6 +101,7 @@ function sessionselect() {
                 # echo "SESSION_EXIT=\"$SESSION_EXIT\"" > /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
                 cp "$HOME"/.config/opendm/xsessions/"$SESSION_CHOICE" /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
                 # Run 'exec' on chosen session so that Xorg will exit when chosen session exits
+                type openbox > /dev/null 2>&1 && openbox --exit
                 $SESSION_START
                 ;;
             esac
