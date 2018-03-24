@@ -6,7 +6,7 @@ WIP - A simple GUI Display Manager written entirely in bash that uses xinit to s
 
 # Dependencies
 
-xinit, yad or qarma
+xinit, qarma
 
 # Installation/Removal
 
