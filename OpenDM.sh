@@ -41,16 +41,9 @@ function generatesessionlist() {
 
 # function that displays session choice and password entry.
 function supasswordcheck() {
-    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-        SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Shutdown" \
-        --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Enter password for $USER<br/></h2>" \
-        --add-combo="" --combo-values=$SESSION_LIST --add-password="")"
-    else
-        SESSION_CHOICE="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
-        --width=350 --height=200 --form --separator="|" --item-separator="|" --image="/tmp/opendm.png" --button="Shutdown|gtk-cancel":1 --button=gtk-ok:0 \
-        --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="Enter password for $USER\n":LBL "Enter password for $USER\n" --field="":CB "$SESSION_LIST" \
-        --field="":H | cut -f3- -d'|')"
-    fi
+    SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Shutdown" \
+    --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Enter password for $USER<br/></h2>" \
+    --add-combo="" --combo-values=$SESSION_LIST --add-password="")"
     case $? in
         1)
             logoutselect "SHUTDOWN"
@@ -60,11 +53,7 @@ function supasswordcheck() {
     SESSION_CHOICE="$(echo $SESSION_CHOICE | cut -f1 -d'|')"
     # use su -c true "$USER" to check password entry
     if ! echo "$SU_PASSWORD_CHECK" | su -c true "$USER"; then
-        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-            qarma --title="OpenDM" --error --text="Incorrect password for $USER!"
-        else
-            yad --borders=10 --on-top --center --title="OpenDM" --error --text="Incorrect password for $USER!" --button=gtk-ok:0
-        fi
+        qarma --title="OpenDM" --error --text="Incorrect password for $USER!"
         exit 1
     fi
 }
@@ -78,15 +67,9 @@ function sessionselect() {
             supasswordcheck || exit 0
             ;;
         *)
-            if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Logout" \
-                --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>$USER@$HOST<br/></h2>" \
-                --add-combo="" --combo-values=$SESSION_LIST)"
-            else
-                SESSION_CHOICE="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
-                --width=350 --height=200 --separator="" --form --item-separator="|" --image="/tmp/opendm.png" --button="Logout|gtk-cancel":1 --button=gtk-ok:0 \
-                --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="$USER@$HOST\n":LBL "$USER@$HOST\n" --field="":CB "$SESSION_LIST")"
-            fi
+            SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Logout" \
+            --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>$USER@$HOST<br/></h2>" \
+            --add-combo="" --combo-values=$SESSION_LIST)"
             ;;
     esac
     # Go to logoutselect function if no choice was made; "LOGOUT" tells logoutselect function not to provide option to exit session and to return to sessionselect if no logout choice is made
@@ -150,12 +133,7 @@ function autostart() {
 # Provides a simple qarma entry box to run 'exec' on commands not listed in sessionselect
 # Can be used for other DEs/WMs or even for running something like a browser quick without launching a whole DE/WM along with it
 function othersession() {
-    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-        OTHER_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="Enter a command to run" --entry-text="xterm")"
-    else
-        OTHER_CHOICE="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
-        --width=350 --height=200 --separator="" --entry --text="Enter a command to run" --entry-text="xterm")"
-    fi
+    OTHER_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="Enter a command to run" --entry-text="xterm")"
     if [ -z "$OTHER_CHOICE" ]; then
         sessionselect
         exit 0
@@ -170,15 +148,9 @@ function logoutselect() {
         # Detect if ran from sessionselect so we know if the 'Exit' option should be shown or not
         case $1 in
             SHUTDOWN)
-                if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                    LOGOUT_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Back" \
-                    --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Shutdown?<br/></h2>" \
-                    --add-combo="" --combo-values="Restart|Shutdown")"
-                else
-                    LOGOUT_CHOICE="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
-                    --width=350 --height=200 --separator="" --form --item-separator="|" --image="/tmp/opendm.png" --button="Back|gtk-cancel":1 --button=gtk-ok:0 \
-                    --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="Shutdown?\n":LBL "Shutdown?\n" --field="":CB "Restart|Shutdown")"
-                fi
+                LOGOUT_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Back" \
+                --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Shutdown?<br/></h2>" \
+                --add-combo="" --combo-values="Restart|Shutdown")"
                 case $? in
                     1)
                         supasswordcheck
@@ -186,34 +158,18 @@ function logoutselect() {
                 esac
                 ;;
             LOGOUT)
-                if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                    LOGOUT_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Back" \
-                    --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Logout?<br/></h2>" \
-                    --add-combo="" --combo-values="Logout|Restart|Shutdown")"
-                else
-                    LOGOUT_CHOICE="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
-                    --width=350 --height=200 --separator="" --form --item-separator="|" --image="/tmp/opendm.png" --button="Back|gtk-cancel":1 --button=gtk-ok:0 \
-                    --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="Logout?\n":LBL "Logout?\n" --field="":CB "Logout|Restart|Shutdown")"
-                fi
+                LOGOUT_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Back" \
+                --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Logout?<br/></h2>" \
+                --add-combo="" --combo-values="Logout|Restart|Shutdown")"
                 ;;
             *)
                 if [ ! -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-                    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                        qarma --error --title="OpenDM" --text="Current session was not started with OpenDM!"  --window-icon="/tmp/opendm.png"
-                    else
-                        yad --borders=10 --on-top --center --error --title="OpenDM" --text="Current session was not started with OpenDM!"  --window-icon="/tmp/opendm.png" --button=gtk-ok
-                    fi
+                    qarma --error --title="OpenDM" --text="Current session was not started with OpenDM!"  --window-icon="/tmp/opendm.png"
                     exit 1
                 fi
-                if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                    LOGOUT_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms \
-                    --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Exit Session?<br/></h2>" \
-                    --add-combo="" --combo-values="Exit|Logout|Restart|Shutdown")"
-                else
-                    LOGOUT_CHOICE="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
-                    --width=350 --height=200 --separator="" --form --item-separator="|" --image="/tmp/opendm.png" --button="gtk-cancel":1 --button=gtk-ok:0 \
-                    --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="Exit Session?\n":LBL "Exit Session?\n" --field="":CB "Exit|Logout|Restart|Shutdown")"
-                fi
+                LOGOUT_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms \
+                --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Exit Session?<br/></h2>" \
+                --add-combo="" --combo-values="Exit|Logout|Restart|Shutdown")"
                 ;;
         esac
         case $LOGOUT_CHOICE in
@@ -292,21 +248,13 @@ function opendmquit() {
         echo '$DISPLAY is not set; exiting...'
         exit 1
     elif [ ! -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-            qarma --error --title="OpenDM" --text="Current session was not started with OpenDM!"  --window-icon="/tmp/opendm.png"
-        else
-            yad --borders=10 --on-top --center --error --title="OpenDM" --text="Current session was not started with OpenDM!"  --window-icon="/tmp/opendm.png" --button=gtk-ok:0
-        fi
+        qarma --error --title="OpenDM" --text="Current session was not started with OpenDM!"  --window-icon="/tmp/opendm.png"
         exit 1
     fi
     case $1 in
         exit)
             # Use qarma to show a prompt asking to exit session
-            if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to exit the current X session?"  --window-icon="/tmp/opendm.png"
-            else
-                yad --borders=10 --on-top --center --question --image="/tmp/opendm.png" --title="OpenDM" --text="OpenDM\n\nWould you like to exit the current X session?"  --window-icon="/tmp/opendm.png" --button=gtk-no:1 --button=gtk-yes:0
-            fi
+            qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to exit the current X session?"  --window-icon="/tmp/opendm.png"
             case $? in
                 0)
                     # Source currentsession file to get $SESSION_EXIT
@@ -324,11 +272,7 @@ function opendmquit() {
             ;;
         logout)
             # Use qarma to show a prompt asking to logout
-            if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to logout?"  --window-icon="/tmp/opendm.png"
-            else
-                yad --borders=10 --on-top --center --question --image="/tmp/opendm.png" --title="OpenDM" --text="OpenDM\n\nWould you like to logout?"  --window-icon="/tmp/opendm.png" --button=gtk-no:1 --button=gtk-yes:0
-            fi
+            qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to logout?"  --window-icon="/tmp/opendm.png"
             case $? in
                 0)
                     # Source currentsession file if it exists else set $SESSION_EXIT to 'exit 0'
@@ -349,11 +293,7 @@ function opendmquit() {
             ;;
         reboot)
             # Use qarma to show a prompt asking to reboot
-            if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to reboot the PC?"  --window-icon="/tmp/opendm.png"
-            else
-                yad --borders=10 --on-top --center --question --image="/tmp/opendm.png" --title="OpenDM" --text="OpenDM\n\nWould you like to reboot the PC?"  --window-icon="/tmp/opendm.png" --button=gtk-no:1 --button=gtk-yes:0
-            fi
+            qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to reboot the PC?"  --window-icon="/tmp/opendm.png"
             case $? in
                 0)
                     # Set default $OPENDM_REBOOT_CMD if doesn't exist
@@ -380,11 +320,7 @@ function opendmquit() {
             ;;
         shutdown)
             # Use qarma to show a prompt asking to shutdown
-            if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to shutdown the PC?"  --window-icon="/tmp/opendm.png"
-            else
-                yad --borders=10 --on-top --center --question --image="/tmp/opendm.png" --title="OpenDM" --text="OpenDM\n\nWould you like to shutdown the PC?"  --window-icon="/tmp/opendm.png" --button=gtk-no:1 --button=gtk-yes:0
-            fi
+            qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to shutdown the PC?"  --window-icon="/tmp/opendm.png"
             case $? in
                 0)
                     # Set default $OPENDM_SHUTDOWM_CMD if doesn't exist
@@ -417,63 +353,31 @@ function opendmquit() {
 # $SESSION_NAME cannot contain spaces.  $SESSION_NAME, $SESSION_START, and $SESSON_EXIT are required
 # $SESSION_AUTOSTART is optional; will create autostart script if it does not exist and make it executable
 function addsession() {
-    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-        SESSION_NAME="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM<br><br>Enter the name of the session (no spaces)")"
-    else
-        SESSION_NAME="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM\n\nEnter the name of the session (no spaces)")"
-    fi
+    SESSION_NAME="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM<br><br>Enter the name of the session (no spaces)")"
     if [ -z "$SESSION_NAME" ]; then
-        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-            qarma --title="OpenDM" --error --text="No session name was entered!"
-        else
-            yad --borders=10 --on-top --center --title="OpenDM" --error --text="No session name was entered!" --button=gtk-ok:0
-        fi
+        qarma --title="OpenDM" --error --text="No session name was entered!"
         opendmconfig
         exit 0
     elif [ -f "$HOME/.config/opendm/xsessions/$SESSION_NAME" ]; then
-        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-            qarma --title="OpenDM" --error --text="$SESSION_NAME already exists!"
-        else
-            yad --borders=10 --on-top --center --title="OpenDM" --error --text="$SESSION_NAME already exists!" --button=gtk-ok:0
-        fi
+        qarma --title="OpenDM" --error --text="$SESSION_NAME already exists!"
         opendmconfig
         exit 0
     fi
-    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-        SESSION_START="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM<br><br>Enter the command used to start this session")"
-    else
-        SESSION_START="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM\n\nEnter the command used to start this session")"
-    fi
+    SESSION_START="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM<br><br>Enter the command used to start this session")"
     if [ -z "$SESSION_START" ]; then
-        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-            qarma --title="OpenDM" --error --text="No session start command was entered!"
-        else
-            yad --borders=10 --on-top --center --title="OpenDM" --error --text="No session start command was entered!" --button=gtk-ok:0
-        fi
+        qarma --title="OpenDM" --error --text="No session start command was entered!"
         opendmconfig
         exit 0
     fi
-    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-        SESSION_EXIT="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM<br><br>Enter the command used to exit this session")"
-    else
-        SESSION_EXIT="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM\n\nEnter the command used to exit this session")"
-    fi
+    SESSION_EXIT="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM<br><br>Enter the command used to exit this session")"
     if [ -z "$SESSION_EXIT" ]; then
-        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-            qarma --title="OpenDM" --error --text="No session exit was entered!"
-        else
-            yad --borders=10 --on-top --center --title="OpenDM" --error --text="No session exit was entered!" --button=gtk-ok:0
-        fi
+        qarma --title="OpenDM" --error --text="No session exit was entered!"
         opendmconfig
         exit 0
     fi
     echo "SESSION_START=\"$SESSION_START\"" > "$HOME"/.config/opendm/xsessions/"$SESSION_NAME"
     echo "SESSION_EXIT=\"$SESSION_EXIT\"" >> "$HOME"/.config/opendm/xsessions/"$SESSION_NAME"
-    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-        SESSION_AUTOSTART="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM<br><br>Enter the file name in $HOME/.config/autostart/ for $SESSION_NAME <br>Leave the inputbox blank for no autostart file" --entry-text="autostart.sh")"
-    else
-        SESSION_AUTOSTART="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM\n\nEnter the file name in $HOME/.config/autostart/ for $SESSION_NAME \nLeave the inputbox blank for no autostart file" --entry-text="autostart.sh")"
-    fi
+    SESSION_AUTOSTART="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM<br><br>Enter the file name in $HOME/.config/autostart/ for $SESSION_NAME <br>Leave the inputbox blank for no autostart file" --entry-text="autostart.sh")"
     if [ ! -z "$SESSION_AUTOSTART" ]; then
         echo "SESSION_AUTOSTART=\"$SESSION_AUTOSTART\"" >> "$HOME"/.config/opendm/xsessions/"$SESSION_NAME"
         if [ ! -f "$HOME/.config/opendm/autostart/$SESSION_AUTOSTART" ]; then
@@ -486,11 +390,7 @@ function addsession() {
     else
         echo "SESSION_AUTOSTART=\"\"" >> "$HOME"/.config/opendm/xsessions/"$SESSION_NAME"
     fi
-    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-        qarma --title="OpenDM" --info --text="$SESSION_NAME has been added!"
-    else
-        yad --borders=10 --on-top --center --title="OpenDM" --info --text="$SESSION_NAME has been added!" --button=gtk-ok:0
-    fi
+    qarma --title="OpenDM" --info --text="$SESSION_NAME has been added!"
     opendmconfig
 }
 
@@ -502,23 +402,13 @@ function editsessions() {
     done)"
     # Remove last '|' from $SESSION_LIST to prevent blank entry
     SESSION_LIST="$(echo $SESSION_LIST | rev | cut -f2- -d'|' | rev)"
-    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-        SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Edit Session<br/></h2>" --add-combo="" --combo-values=$SESSION_LIST)"
-    else
-        SESSION_CHOICE="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
-        --width=350 --height=200 --separator="" --form --item-separator="|" --image="/tmp/opendm.png" --button="gtk-cancel":1 --button=gtk-ok:0 \
-        --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="Edit Session\n":LBL "Edit Session\n" --field="":CB "$SESSION_LIST")"
-    fi
+    SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Edit Session<br/></h2>" --add-combo="" --combo-values=$SESSION_LIST)"
     # If no choice, return to config
     if [ -z "$SESSION_CHOICE" ]; then
         opendmconfig
     else
         # qarma text input box to edit chosen session
-        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-            EDITED_SESSION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --checkbox="Save Changes" --editable --filename=""$HOME"/.config/opendm/xsessions/"$SESSION_CHOICE"")"
-        else
-            EDITED_SESSION="$(yad --borders=10 --on-top --center --width=400 --height=400 --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --editable --filename=""$HOME"/.config/opendm/xsessions/"$SESSION_CHOICE"")"
-        fi
+        EDITED_SESSION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --checkbox="Save Changes" --editable --filename=""$HOME"/.config/opendm/xsessions/"$SESSION_CHOICE"")"
         case $? in
             1)
                 # Return to config without saving if canceled
@@ -527,19 +417,11 @@ function editsessions() {
             0)
                 # If no text input, display error and return to config else save changes
                 if [ -z "$EDITED_SESSION" ]; then
-                    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                        qarma --title="OpenDM" --error --text="No text was entered!"
-                    else
-                        yad --borders=10 --on-top --center --title="OpenDM" --error --text="No text was entered!" --button=gtk-ok:0
-                    fi
+                    qarma --title="OpenDM" --error --text="No text was entered!"
                     opendmconfig "Sessions"
                 else
                     echo "$EDITED_SESSION" > "$HOME"/.config/opendm/xsessions/"$SESSION_CHOICE"
-                    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                        qarma --title="OpenDM" --info --text="Changes to $SESSION_CHOICE have been saved!"
-                    else
-                        yad --borders=10 --on-top --center --title="OpenDM" --info --text="Changes to $SESSION_CHOICE have been saved!" --button=gtk-ok:0
-                    fi
+                    qarma --title="OpenDM" --info --text="Changes to $SESSION_CHOICE have been saved!"
                     opendmconfig "Sessions"
                 fi
                 ;;
@@ -553,42 +435,24 @@ function editautostart() {
         echo -n "$autostartfile|"
     done)"
     AUTOSTART_LIST="$(echo $AUTOSTART_LIST | rev | cut -f2- -d'|' | rev)"
-    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-        AUTOSTART_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Edit Autostart File<br/></h2>" --add-combo="" --combo-values=$AUTOSTART_LIST)"
-    else
-        AUTOSTART_CHOICE="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
-        --width=350 --height=200 --separator="" --form --item-separator="|" --image="/tmp/opendm.png" --button="gtk-cancel":1 --button=gtk-ok:0 \
-        --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="Edit Autostart File\n":LBL "Edit Autostart File\n" --field="":CB "$AUTOSTART_LIST")"
-    fi
+    AUTOSTART_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Edit Autostart File<br/></h2>" --add-combo="" --combo-values=$AUTOSTART_LIST)"
     case $? in
         1)
             opendmconfig
             ;;
         0)
-            if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                EDITED_AUTOSTART="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --checkbox="Save Changes" --editable --filename=""$HOME"/.config/opendm/autostart/"$AUTOSTART_CHOICE"")"
-            else
-                EDITED_AUTOSTART="$(yad --borders=10 --on-top --center --width=500 --height=500 --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --editable --filename=""$HOME"/.config/opendm/autostart/"$AUTOSTART_CHOICE"")"
-            fi
+            EDITED_AUTOSTART="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --checkbox="Save Changes" --editable --filename=""$HOME"/.config/opendm/autostart/"$AUTOSTART_CHOICE"")"
             case $? in
                 1)
                     opendmconfig "Autostart"
                     ;;
                 0)
                     if [ -z "$EDITED_AUTOSTART" ]; then
-                        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                            qarma --title="OpenDM" --error --text="No text was entered!"
-                        else
-                            yad --borders=10 --on-top --center --title="OpenDM" --error --text="No text was entered!" --button=gtk-ok:0
-                        fi
+                        qarma --title="OpenDM" --error --text="No text was entered!"
                         opendmconfig "Autostart"
                     else
                         echo "$EDITED_AUTOSTART" > "$HOME"/.config/opendm/autostart/"$AUTOSTART_CHOICE"
-                        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                            qarma --title="OpenDM" --info --text="Changes to $AUTOSTART_CHOICE have been saved!"
-                        else
-                            yad --borders=10 --on-top --center --title="OpenDM" --info --text="Changes to $AUTOSTART_CHOICE have been saved!" --button=gtk-ok:0
-                        fi
+                        qarma --title="OpenDM" --info --text="Changes to $AUTOSTART_CHOICE have been saved!"
                         opendmconfig "Autostart"
                     fi
                     ;;
@@ -601,32 +465,20 @@ function editautostart() {
 function editvariables() {
     CURRENT_WIDTH=$(xrandr --current | head -n 1 | cut -f2 -d',' | cut -f-1 -d'x' | cut -f3 -d' ')
     CURRENT_HEIGHT=$(xrandr --current | head -n 1 | cut -f2 -d',' | cut -f2 -d'x' | cut -f2 -d' ')
-    DIALOG_WIDTH=$(echo $CURRENT_WIDTH | awk '{print $1 * .50}')
-    DIALOG_HEIGHT=$(echo $CURRENT_HEIGHT | awk '{print $1 * .50}')
-    if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-        EDITED_VARIABLES="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --checkbox="Save Changes" --editable --width=$DIALOG_WIDTH --height=$DIALOG_HEIGHT --filename=""$HOME"/.config/opendm/variables.conf")"
-    else
-        EDITED_VARIABLES="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --editable --width=$DIALOG_WIDTH --height=$DIALOG_HEIGHT --filename=""$HOME"/.config/opendm/variables.conf")"
-    fi
+    DIALOG_WIDTH=$(echo $CURRENT_WIDTH | awk '{print $1 * .50}' | cut -f1 -d'.')
+    DIALOG_HEIGHT=$(echo $CURRENT_HEIGHT | awk '{print $1 * .50}' | cut -f1 -d'.')
+    EDITED_VARIABLES="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --checkbox="Save Changes" --editable --width=$DIALOG_WIDTH --height=$DIALOG_HEIGHT --filename=""$HOME"/.config/opendm/variables.conf")"
     case $? in
         1)
             opendmconfig
             ;;
         0)
             if [ -z "$EDITED_VARIABLES" ]; then
-                if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                    qarma --title="OpenDM" --error --text="No text was entered!"
-                else
-                    yad --borders=10 --on-top --center --title="OpenDM" --error --text="No text was entered!" --button=gtk-ok:0
-                fi
+                qarma --title="OpenDM" --error --text="No text was entered!"
                 opendmconfig
             else
                 echo "$EDITED_VARIABLES" > "$HOME"/.config/opendm/variables.conf
-                if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                    qarma --title="OpenDM" --info --text="Changes to OpenDM Variables have been saved.<br>Changes will take effect on next login!"
-                else
-                    yad --borders=10 --on-top --center --title="OpenDM" --info --text="Changes to OpenDM Variables have been saved.\nChanges will take effect on next login!" --button=gtk-ok:0
-                fi
+                qarma --title="OpenDM" --info --text="Changes to OpenDM Variables have been saved.<br>Changes will take effect on next login!"
                 opendmconfig
             fi
             ;;
@@ -638,20 +490,12 @@ function editvariables() {
 function xorglogviewer() {
     CURRENT_WIDTH=$(xrandr --current | head -n 1 | cut -f2 -d',' | cut -f-1 -d'x' | cut -f3 -d' ')
     CURRENT_HEIGHT=$(xrandr --current | head -n 1 | cut -f2 -d',' | cut -f2 -d'x' | cut -f2 -d' ')
-    DIALOG_WIDTH=$(echo $CURRENT_WIDTH | awk '{print $1 * .50}')
-    DIALOG_HEIGHT=$(echo $CURRENT_HEIGHT | awk '{print $1 * .50}')
+    DIALOG_WIDTH=$(echo $CURRENT_WIDTH | awk '{print $1 * .50}' | cut -f1 -d'.')
+    DIALOG_HEIGHT=$(echo $CURRENT_HEIGHT | awk '{print $1 * .50}' | cut -f1 -d'.')
     if [ -d "$HOME/.local/share/xorg" ]; then
-        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-            XORGLOG_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --file-selection --filename="$HOME/.local/share/xorg/X")"
-        else
-            XORGLOG_SELECTION="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --file-selection --filename="$HOME/.local/share/xorg/X")"
-        fi
+        XORGLOG_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --file-selection --filename="$HOME/.local/share/xorg/X")"
         if [ ! -z "$XORGLOG_SELECTION" ]; then
-            if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                qarma --title="OpenDM" --text-info --editable --width=$DIALOG_WIDTH --height=$DIALOG_HEIGHT --filename="$XORGLOG_SELECTION"
-            else
-                yad --borders=10 --on-top --center --title="OpenDM" --text-info --editable --width=$DIALOG_WIDTH --height=$DIALOG_HEIGHT --filename="$XORGLOG_SELECTION"
-            fi
+            qarma --title="OpenDM" --text-info --editable --width=$DIALOG_WIDTH --height=$DIALOG_HEIGHT --filename="$XORGLOG_SELECTION"
             case $? in
                 0)
                     opendmconfig "Xorg"
@@ -664,17 +508,9 @@ function xorglogviewer() {
             opendmconfig
         fi
     else
-        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-            XORGLOG_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --file-selection --filename="/var/log/X")"
-        else
-            XORGLOG_SELECTION="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --file-selection --filename="/var/log/X")"
-        fi
+        XORGLOG_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --file-selection --filename="/var/log/X")"
         if [ ! -z "$XORGLOG_SELECTION" ]; then
-            if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                qarma --title="OpenDM" --text-info --editable --width=$DIALOG_WIDTH --height=$DIALOG_HEIGHT --filename="$XORGLOG_SELECTION"
-            else
-                yad --borders=10 --on-top --center --title="OpenDM" --text-info --editable --width=$DIALOG_WIDTH --height=$DIALOG_HEIGHT --filename="$XORGLOG_SELECTION"
-            fi
+            qarma --title="OpenDM" --text-info --editable --width=$DIALOG_WIDTH --height=$DIALOG_HEIGHT --filename="$XORGLOG_SELECTION"
             case $? in
                 0)
                     opendmconfig "Xorg"
@@ -694,14 +530,7 @@ function opendmconfig() {
     if [ ! -z "$1" ]; then
         CONFIG_SELECTION="$1"
     else
-        # CONFIG_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Edit Settings<br/></h2>" --add-combo="" --combo-values='Enable or Disable Sessions|Sessions Editor|Add New Session|OpenDM Variables Editor|Autostart Files Editor|Xorg Log Viewer')"
-        if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-            CONFIG_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Edit Settings<br/></h2>" --add-combo="" --combo-values='Sessions Editor|Add New Session|OpenDM Variables Editor|Autostart Files Editor|Xorg Log Viewer')"
-        else
-            CONFIG_SELECTION="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
-            --width=350 --height=200 --separator="" --form --item-separator="|" --image="/tmp/opendm.png" --button="gtk-cancel":1 --button=gtk-ok:0 \
-            --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="Edit Settings\n":LBL "Edit Settings\n" --field="":CB "Sessions Editor|Add New Session|OpenDM Variables Editor|Autostart Files Editor|Xorg Log Viewer")"
-        fi
+        CONFIG_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Edit Settings<br/></h2>" --add-combo="" --combo-values='Sessions Editor|Add New Session|OpenDM Variables Editor|Autostart Files Editor|Xorg Log Viewer')"
     fi
     case $CONFIG_SELECTION in
         Enable*)
@@ -764,13 +593,7 @@ function startchecks() {
                 ;;
             *)
                 # Tell user that X session is running and provide option to launch config or exit session
-                if [ "$OPENDM_USE_QARMA" = "TRUE" ]; then
-                    RUNNING_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>An X Session is already running.<br/></h2>" --add-combo="" --combo-values="Edit Settings|Exit Session")"
-                else
-                    RUNNING_SELECTION="$(yad --borders=10 --on-top --center --window-icon="/tmp/opendm.png" --title="OpenDM" --align="center" --text-align="center" \
-                    --width=350 --height=200 --separator="" --form --item-separator="|" --image="/tmp/opendm.png" --button="gtk-cancel":1 --button=gtk-ok:0 \
-                    --field="OpenDM\n\n":LBL "OpenDM\n\n" --field="An X Session is already running.\n":LBL "An X Session is already running.\n" --field="":CB "Edit Settings|Exit Session")"
-                fi
+                RUNNING_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>An X Session is already running.<br/></h2>" --add-combo="" --combo-values="Edit Settings|Exit Session")"
                 case $RUNNING_SELECTION in
                     Edit*)
                         opendmconfig
@@ -817,13 +640,9 @@ if ! type startx >/dev/null 2>&1; then
     echo "xinit is not installed; exiting..."
     exit 1
 fi
-# FIXME WHEN YAD DONE
-if ! type yad >/dev/null 2>&1; then
-    OPENDM_USE_QARMA="TRUE"
-    if ! type qarma >/dev/null 2>&1; then
-        echo "yad or qarma not installed; exiting..."
-        exit 1
-    fi
+if ! type qarma >/dev/null 2>&1; then
+    echo "qarma not installed; exiting..."
+    exit 1
 fi
 
 # Check if OpenDM's config dir exists and create config dir if it doesn't exist
