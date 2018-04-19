@@ -104,7 +104,7 @@ function sessionselect() {
                 type openbox > /dev/null 2>&1 && openbox --exit
                 $SESSION_START
                 ;;
-            esac
+        esac
     fi
 }
 
@@ -664,7 +664,7 @@ if [ -f "$HOME/.config/opendm/opendm.png" ]; then
 fi
 
 # Run a for loop on ~/.config/opendm/xsessions that checks SESSION_START commands using type
-for xsession in $(dir -a -C -w 1 "$HOME"/.config/opendm/xsessions | tail -n +3); do
+for xsession in $(dir -a -C -w 1 "$HOME"/.config/opendm/xsessions | tail -n +3 | grep -vw '.directory'); do
     . "$HOME"/.config/opendm/xsessions/"$xsession"
     case $xsession in
         # If session is disabled and type finds SESSION_START command, session is enabled
