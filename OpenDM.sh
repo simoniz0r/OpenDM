@@ -9,12 +9,61 @@ if [ -z "$OPENDM_TTY" ]; then
     OPENDM_TTY="tty1"
 fi
 
+# Start function to check if $DISPLAY is set and running on $OPENDM_TTY; use startx if $DISPLAY is not set and running on $OPENDM_TTY
+function startchecks() {
+    if [ -z "$DISPLAY" ] && [ "$(ps ax | grep $$ | grep -v grep | awk '{ print $2 }')" = "$OPENDM_TTY" ]; then
+        if [ ! -d "/tmp/opendm/$USER/$OPENDM_TTY" ]; then
+            mkdir -p /tmp/opendm/"$USER"/"$OPENDM_TTY"
+        fi
+        if [ -f "$RUNNING_DIR/configs/.opendminitrc" ]; then
+            startx "$RUNNING_DIR"/configs/.opendminitrc "--session-select" > ~/.xsession-errors 2>&1
+        elif [ -f "$HOME/.config/opendm/.opendminitrc" ]; then
+            startx "$HOME"/.config/opendm/.opendminitrc "--session-select" > ~/.xsession-errors 2>&1
+        else
+            echo '""$HOME"/.config/opendm/.opendminitrc does not exist!' 
+            echo 'Please see https://github.com/simoniz0r/OpenDM/.opendminitrc for an example.'
+            exit 1
+        fi
+    # If $DISPLAY is set, just run OpenDM's arguments without using startx
+    elif [ ! -z "$DISPLAY" ]; then
+        case "$1" in
+            config)
+                opendmconfig
+                ;;
+            *)
+                # Tell user that X session is running and provide option to launch config or exit session
+                RUNNING_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>An X Session is already running.<br/></h2>" --add-combo="" --combo-values="Edit Settings|Exit Session")"
+                case "$RUNNING_SELECTION" in
+                    Edit*)
+                        opendmconfig
+                        ;;
+                    Exit*)
+                        logoutselect
+                        ;;
+                    *)
+                        exit 0
+                        ;;
+                esac
+                ;;
+        esac
+    # Exit if not running on $OPENDM_TTY
+    else
+        echo "OPENDM_TTY is set to $OPENDM_TTY; currently running on $(ps ax | grep $$ | grep -v grep | awk '{ print $2 }')."
+        echo "Running OpenDM on multiple TTYs at the same time is currently not supported."
+        echo "Please edit your shell's profile to change the 'export OPENDM_TTY=' line if you wish to use a different TTY."
+        exit 1
+    fi
+}
+
 function generatesessionlist() {
     if [ ! -d "/tmp/opendm/$USER/$OPENDM_TTY" ]; then
         mkdir -p /tmp/opendm/"$USER"/"$OPENDM_TTY"
     fi
     # Run a for loop on ~/.config/opendm/xsessions that checks for enabled sessions
     # If OPENDM_DEFAULT_SESSION is set in variables.conf and session file matching name exists, list default session first
+    if [ -f "$HOME/.config/opendm/lastsession" ]; then
+        OPENDM_DEFAULT_SESSION="$(cat ~/.config/opendm/lastsession)"
+    fi
     SESSION_LIST="$( if [ ! -z "$OPENDM_DEFAULT_SESSION" ] && [ -f "$HOME/.config/opendm/xsessions/$OPENDM_DEFAULT_SESSION" ]; then
         echo -n "$OPENDM_DEFAULT_SESSION|"
     else
@@ -23,7 +72,7 @@ function generatesessionlist() {
     fi
     # For loop that looks for enabled session files and lists them by name
     for sessionfile in $(\dir -C -w 1 "$HOME"/.config/opendm/xsessions); do
-        case $sessionfile in
+        case "$sessionfile" in
             # Default session was already added to list, so we do nothing when it is found again
             "$OPENDM_DEFAULT_SESSION")
                 sleep 0
@@ -56,28 +105,36 @@ function supasswordcheck() {
         qarma --title="OpenDM" --error --text="Incorrect password for $USER!"
         exit 1
     fi
+    rm -f ~/.cache/opendm-lastsession
 }
 
 # Function that provides session selection based on files in ~/.config/opendm/xsessions and runs 'exec' on the user's choice
 function sessionselect() {
-    type openbox > /dev/null 2>&1 && ! pgrep openbox && [ -f "$HOME/.config/opendm/.openboxrc.xml" ] && openbox --config-file ~/.config/opendm/.openboxrc.xml & disown
     generatesessionlist
     # Use qarma to provide a GUI with a list of enabled sessions, OpenDM's settings menu, and ability to launch non listed session through 'Other...'
-    case $1 in
-        PASSWORD_CHECK)
-            supasswordcheck || exit 0
-            ;;
-        *)
-            SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Logout" \
-            --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>$USER@$HOST<br/></h2>" \
-            --add-combo="" --combo-values=$SESSION_LIST)"
-            ;;
-    esac
+    if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/lastsession" ] || [ -z "$OPENDM_DEFAULT_SESSION" ]; then
+        OPENDM_AUTOSTART_DEFAULT="FALSE"
+    fi
+    if [ "$OPENDM_PASSWORD_CHECK" = "TRUE" ] && [ ! -f "$HOME/.cache/opendm-lastsession" ]; then
+        type openbox > /dev/null 2>&1 && ! pgrep openbox && [ -f "$HOME/.config/opendm/.openboxrc.xml" ] && openbox --config-file ~/.config/opendm/.openboxrc.xml & disown
+        supasswordcheck || exit 0
+    elif [ ! "$OPENDM_AUTOSTART_DEFAULT" = "TRUE" ]; then
+        type openbox > /dev/null 2>&1 && ! pgrep openbox && [ -f "$HOME/.config/opendm/.openboxrc.xml" ] && openbox --config-file ~/.config/opendm/.openboxrc.xml & disown
+        SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Logout" \
+        --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>$USER@$HOST<br/></h2>" \
+        --add-combo="" --combo-values=$SESSION_LIST)"
+    else
+        if [ -f "$HOME/.config/opendm/lastsession" ]; then
+            SESSION_CHOICE="$(cat ~/.config/opendm/lastsession)"
+        else
+            SESSION_CHOICE="$OPENDM_DEFAULT_SESSION"
+        fi
+    fi
     # Go to logoutselect function if no choice was made; "LOGOUT" tells logoutselect function not to provide option to exit session and to return to sessionselect if no logout choice is made
     if [ -z "$SESSION_CHOICE" ]; then
         logoutselect "LOGOUT"
     else
-        case $SESSION_CHOICE in
+        case "$SESSION_CHOICE" in
             Settings)
                 # Run OpenDM's config with "sessionselect" so that config knows to come back to sessionselect after user has finished
                 touch /tmp/opendm/"$USER"/"$OPENDM_TTY"/sessionselect
@@ -98,37 +155,13 @@ function sessionselect() {
                     "$HOME"/.config/opendm/autostart/"$SESSION_AUTOSTART"
                 fi
                 # Place the $SESSION_EXIT command in ~/.config/opendm/.currentsession"$OPENDM_TTY" so we know how to exit the chosen session in the logout menu
-                # echo "SESSION_EXIT=\"$SESSION_EXIT\"" > /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
+                echo "$SESSION_CHOICE" > ~/.config/opendm/lastsession
                 cp "$HOME"/.config/opendm/xsessions/"$SESSION_CHOICE" /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
                 # Run 'exec' on chosen session so that Xorg will exit when chosen session exits
                 type openbox > /dev/null 2>&1 && openbox --exit
                 $SESSION_START
                 ;;
         esac
-    fi
-}
-
-# If $OPENDM_DEFAULT_SESSION is set, $OPENDM_AUTOSTART_DEFAULT is set to TRUE, the  configured default session will be launched on first login
-# '/tmp/opendmautosession' is used to prevent the auto session from launching if the 'Exit' option is chosen in the logout menu
-function autostart() {
-    if [ -d "/tmp/opendm/$USER/$OPENDM_TTY" ] && [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-        mv /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession /tmp/opendm/"$USER"/"$OPENDM_TTY"/lastsession
-    elif [ ! -d "/tmp/opendm/$USER/$OPENDM_TTY" ]; then
-        mkdir -p /tmp/opendm/"$USER"/"$OPENDM_TTY"
-    fi
-    if [ ! -z "$OPENDM_DEFAULT_SESSION" ] && [ -f "$HOME/.config/opendm/xsessions/$OPENDM_DEFAULT_SESSION" ] && [ ! -f "/tmp/opendm/$USER/$OPENDM_TTY/lastsession" ]; then
-        . "$HOME"/.config/opendm/xsessions/"$OPENDM_DEFAULT_SESSION"
-        # Not sure if these are helping; disabling for now...
-        # export WINDOWMANAGER="$SESSION_START"
-        # export XDG_CURRENT_DESKTOP="$SESSION_CHOICE"
-        # export XDG_SESSION_DESKTOP="$(echo $SESSION_CHOICE | tr '[:upper:]' '[:lower:]')"
-        if [ ! -z "$SESSION_AUTOSTART" ] && [ -f "$HOME/.config/opendm/autostart/$SESSION_AUTOSTART" ]; then
-            "$HOME"/.config/opendm/autostart/"$SESSION_AUTOSTART"
-        fi
-        cp "$HOME"/.config/opendm/xsessions/"$OPENDM_DEFAULT_SESSION" /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
-        $SESSION_START
-    else
-        sessionselect
     fi
 }
 
@@ -148,7 +181,7 @@ function othersession() {
 # Provides a logout menu during sessionselect and can also be used to exit/logout/restart/shutdown the PC while the session is running
 function logoutselect() {
         # Detect if ran from sessionselect so we know if the 'Exit' option should be shown or not
-        case $1 in
+        case "$1" in
             SHUTDOWN)
                 LOGOUT_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Back" \
                 --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Shutdown?<br/></h2>" \
@@ -174,12 +207,11 @@ function logoutselect() {
                 --add-combo="" --combo-values="Exit|Logout|Restart|Shutdown")"
                 ;;
         esac
-        case $LOGOUT_CHOICE in
+        case "$LOGOUT_CHOICE" in
             Exit*)
                 # Source currentsession file to get $SESSION_EXIT
                 . /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
                 # Create opendmexit file so user's shell knows to restart OpenDM
-                mv /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession /tmp/opendm/"$USER"/"$OPENDM_TTY"/lastsession
                 touch /tmp/opendm/exit
                 # Run $SESSION_EXIT command
                 $SESSION_EXIT
@@ -253,7 +285,7 @@ function opendmquit() {
         qarma --error --title="OpenDM" --text="Current session was not started with OpenDM!"  --window-icon="/tmp/opendm.png"
         exit 1
     fi
-    case $1 in
+    case "$1" in
         exit)
             # Use qarma to show a prompt asking to exit session
             qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to exit the current X session?"  --window-icon="/tmp/opendm.png"
@@ -262,7 +294,6 @@ function opendmquit() {
                     # Source currentsession file to get $SESSION_EXIT
                     . /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
                     # Create opendmexit file so user's shell knows to restart OpenDM
-                    mv /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession /tmp/opendm/"$USER"/"$OPENDM_TTY"/lastsession
                     touch /tmp/opendm/exit
                     # Run $SESSION_EXIT command
                     $SESSION_EXIT
@@ -347,6 +378,48 @@ function opendmquit() {
                     exit 0
                     ;;
             esac
+            ;;
+    esac
+}
+
+# Use qarma to provide a list of OpenDM's config options and route user's choice to relevant function
+function opendmconfig() {
+    if [ ! -z "$1" ]; then
+        CONFIG_SELECTION="$1"
+    else
+        CONFIG_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Edit Settings<br/></h2>" --add-combo="" --combo-values='Sessions Editor|Add New Session|OpenDM Variables Editor|Autostart Files Editor|Xorg Log Viewer')"
+    fi
+    case "$CONFIG_SELECTION" in
+        Enable*)
+            togglesessions
+            ;;
+        Sessions*)
+            editsessions
+            ;;
+        Add*)
+            addsession
+            ;;
+        OpenDM*)
+            editvariables
+            ;;
+        Autostart*)
+            editautostart
+            ;;
+        Xorg*)
+            xorglogviewer
+            ;;
+        *)
+            # Exit if no input and currentsession file exists else return to sessionselect
+            if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
+                exit 0
+            else
+                if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/sessionselect" ]; then
+                    rm -f /tmp/opendm/"$USER"/"$OPENDM_TTY"/sessionselect
+                    sessionselect
+                else
+                    exit 0
+                fi
+            fi
             ;;
     esac
 }
@@ -527,102 +600,6 @@ function xorglogviewer() {
     fi
 }
 
-# Use qarma to provide a list of OpenDM's config options and route user's choice to relevant function
-function opendmconfig() {
-    if [ ! -z "$1" ]; then
-        CONFIG_SELECTION="$1"
-    else
-        CONFIG_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Edit Settings<br/></h2>" --add-combo="" --combo-values='Sessions Editor|Add New Session|OpenDM Variables Editor|Autostart Files Editor|Xorg Log Viewer')"
-    fi
-    case $CONFIG_SELECTION in
-        Enable*)
-            togglesessions
-            ;;
-        Sessions*)
-            editsessions
-            ;;
-        Add*)
-            addsession
-            ;;
-        OpenDM*)
-            editvariables
-            ;;
-        Autostart*)
-            editautostart
-            ;;
-        Xorg*)
-            xorglogviewer
-            ;;
-        *)
-            # Exit if no input and currentsession file exists else return to sessionselect
-            if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-                exit 0
-            else
-                if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/sessionselect" ]; then
-                    rm -f /tmp/opendm/"$USER"/"$OPENDM_TTY"/sessionselect
-                    sessionselect
-                else
-                    exit 0
-                fi
-            fi
-            ;;
-    esac
-}
-
-# Start function to check if $DISPLAY is set and running on $OPENDM_TTY; use startx if $DISPLAY is not set and running on $OPENDM_TTY
-function startchecks() {
-    if [ -z "$DISPLAY" ] && [ -f "$HOME/.config/opendm/.opendminitrc" ] && [ "$(ps ax | grep $$ | grep -v grep | awk '{ print $2 }')" = "$OPENDM_TTY" ]; then
-        if [ -d "/tmp/opendm/$USER/$OPENDM_TTY" ] && [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-            mv /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession /tmp/opendm/"$USER"/"$OPENDM_TTY"/lastsession
-        elif [ ! -d "/tmp/opendm/$USER/$OPENDM_TTY" ]; then
-            mkdir -p /tmp/opendm/"$USER"/"$OPENDM_TTY"
-        fi
-        case $1 in
-            # Allows OpenDM's config to be started from a TTY
-            config)
-                startx "$HOME"/.config/opendm/.opendminitrc --config-start 1>~/.xsession-errors 2>&1
-                ;;
-            # Normal start from a TTY
-            *)
-                startx "$HOME"/.config/opendm/.opendminitrc --session-select 1>~/.xsession-errors 2>&1
-                ;;
-        esac
-    # If $DISPLAY is set, just run OpenDM's arguments without using startx
-    elif [ ! -z "$DISPLAY" ]; then
-        case $1 in
-            config)
-                opendmconfig
-                ;;
-            *)
-                # Tell user that X session is running and provide option to launch config or exit session
-                RUNNING_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>An X Session is already running.<br/></h2>" --add-combo="" --combo-values="Edit Settings|Exit Session")"
-                case $RUNNING_SELECTION in
-                    Edit*)
-                        opendmconfig
-                        ;;
-                    Exit*)
-                        logoutselect
-                        ;;
-                    *)
-                        exit 0
-                        ;;
-                esac
-                ;;
-        esac
-    # Exit if not running on $OPENDM_TTY
-    elif [ ! "$(ps ax | grep $$ | grep -v grep | awk '{ print $2 }')" = "$OPENDM_TTY" ]; then
-        echo "OPENDM_TTY is set to $OPENDM_TTY; currently running on $(ps ax | grep $$ | grep -v grep | awk '{ print $2 }')."
-        echo "Running OpenDM on multiple TTYs at the same time is currently not supported."
-        echo "Please edit your shell's profile to change the 'export OPENDM_TTY=' line if you wish to use a different TTY."
-        exit 1
-    # Exit if ~/.config/opendm/.opendminitrc doesn't exist
-    else
-        echo '""$HOME"/.config/opendm/.opendminitrc does not exist!' 
-        echo 'Please see https://github.com/simoniz0r/opendm/.opendminitrc for an example.'
-        exit 1
-    fi
-}
-
 # TODO better help function
 function opendmhelp() {
     echo "TODO better help function"
@@ -666,7 +643,7 @@ fi
 # Run a for loop on ~/.config/opendm/xsessions that checks SESSION_START commands using type
 for xsession in $(dir -a -C -w 1 "$HOME"/.config/opendm/xsessions | tail -n +3 | grep -vw '.directory'); do
     . "$HOME"/.config/opendm/xsessions/"$xsession"
-    case $xsession in
+    case "$xsession" in
         # If session is disabled and type finds SESSION_START command, session is enabled
         .*)
             if type $(echo "$SESSION_START" | cut -f1 -d' ') >/dev/null 2>&1; then
@@ -684,24 +661,8 @@ for xsession in $(dir -a -C -w 1 "$HOME"/.config/opendm/xsessions | tail -n +3 |
 done
 
 # Detect user input and route to proper functions
-case $1 in
-    # Used internally by OpenDM to execute the autostart function
-    --auto-start)
-        autostart
-        ;;
-    # Used internally by OpenDM to execute the supasswordcheck function
-    --password-check)
-        if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/lastsession" ]; then
-            sessionselect
-        else
-            sessionselect "PASSWORD_CHECK"
-        fi
-        ;;
-    # Used internally by OpenDM to execute the config function
-    --config-start)
-        opendmconfig
-        ;;
-    # Used internally by OpenDM to execute the session select function
+case "$1" in
+    # Internal argument used by OpenDM to start sessionselect function
     --session-select)
         sessionselect
         ;;
@@ -731,7 +692,7 @@ case $1 in
         ;;
     # Any other arguments are routed to startchecks function
     *)
-        startchecks "$1"
+        startchecks
         ;;
 esac
 exit 0
