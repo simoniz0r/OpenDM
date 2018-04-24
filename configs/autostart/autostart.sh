@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Any long running command
 # MUST be followed by '&'
 # Uncomment lines to enable them

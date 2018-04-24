@@ -146,13 +146,12 @@ function sessionselect() {
             *)
                 # Source variables stored in chosen session file
                 . "$HOME"/.config/opendm/xsessions/"$SESSION_CHOICE"
-                # Export session variables (might not actually be helpful; maybe don't do this?)
-                # export WINDOWMANAGER="$SESSION_START"
-                # export XDG_CURRENT_DESKTOP="$SESSION_CHOICE"
-                # export XDG_SESSION_DESKTOP="$(echo $SESSION_CHOICE | tr '[:upper:]' '[:lower:]')"
-                # Run autostart script for chosen session if it is set in the session file and exists
+                # source xprofile if it exists
+                [ -f "/etc/xprofile" ] && . /etc/xprofile
+                [ -f "$HOME/.xprofile" ] && . ~/.xprofile
+                # source autostart script for chosen session if it is set in the session file and exists
                 if [ ! -z "$SESSION_AUTOSTART" ] && [ -f "$HOME/.config/opendm/autostart/$SESSION_AUTOSTART" ]; then
-                    "$HOME"/.config/opendm/autostart/"$SESSION_AUTOSTART"
+                    . "$HOME"/.config/opendm/autostart/"$SESSION_AUTOSTART"
                 fi
                 # Place the $SESSION_EXIT command in ~/.config/opendm/.currentsession"$OPENDM_TTY" so we know how to exit the chosen session in the logout menu
                 echo "$SESSION_CHOICE" > ~/.config/opendm/lastsession
@@ -456,7 +455,7 @@ function addsession() {
     if [ ! -z "$SESSION_AUTOSTART" ]; then
         echo "SESSION_AUTOSTART=\"$SESSION_AUTOSTART\"" >> "$HOME"/.config/opendm/xsessions/"$SESSION_NAME"
         if [ ! -f "$HOME/.config/opendm/autostart/$SESSION_AUTOSTART" ]; then
-            echo "#!/bin/bash" > "$HOME"/.config/opendm/autostart/"$SESSION_AUTOSTART"
+            echo "#!/bin/sh" > "$HOME"/.config/opendm/autostart/"$SESSION_AUTOSTART"
             echo "# All long running commands must be followed with an '&' otherwise the session will not start!" >> "$HOME"/.config/opendm/autostart/"$SESSION_AUTOSTART"
             echo "# Ex:" >> "$HOME"/.config/opendm/autostart/"$SESSION_AUTOSTART"
             echo "# lxpanel &" >> "$HOME"/.config/opendm/autostart/"$SESSION_AUTOSTART"
