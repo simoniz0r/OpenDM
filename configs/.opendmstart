@@ -7,10 +7,5 @@ fi
 if [ -z "$DISPLAY" ] && [ "$(ps ax | grep $$ | grep -v grep | awk '{ print $2 }')" = "$OPENDM_TTY" ]; then
     clear
     opendm
-    if [ -f "/tmp/opendm/reboot" ]; then
-        /tmp/opendm/reboot &
-    elif [ -f "/tmp/opendm/shutdown" ]; then
-        /tmp/opendm/shutdown &
-    fi
     exit 0
 fi

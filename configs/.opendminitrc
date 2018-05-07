@@ -38,19 +38,14 @@ export XDG_SESSION_TYPE="x11"
 
 # Remove leftover files in /tmp
 #
-if [ -f "/tmp/opendm/exit" ]; then  
-    rm -f /tmp/opendm/exit
-    if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-        mv /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession /tmp/opendm/"$USER"/"$OPENDM_TTY"/lastsession
-        cp /tmp/opendm/"$USER"/"$OPENDM_TTY"/lastsession ~/.cache/opendm-lastsession
-    fi
+if [ -d "/tmp/opendm/$USER/$OPENDM_TTY" ] && [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
+    mv /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession /tmp/opendm/"$USER"/"$OPENDM_TTY"/lastsession
+    cp /tmp/opendm/"$USER"/"$OPENDM_TTY"/lastsession ~/.cache/opendm-lastsession
 fi
-if [ -f "/tmp/opendm/logout" ] || [ -f "/tmp/opendm/reboot" ] || [ -f "/tmp/opendm/shutdown" ]; then
+if [ -f "/tmp/opendm/exit" ]; then
     rm -f ~/.cache/opendm-lastsession
     rm -rf /tmp/opendm/"$USER"/"$OPENDM_TTY"
-    rm -f /tmp/opendm/logout
-    rm -f /tmp/opendm/reboot
-    rm -f /tmp/opendm/shutdown
+    rm -f /tmp/opendm/exit
     mkdir -p /tmp/opendm/"$USER"/"$OPENDM_TTY"
 fi
 

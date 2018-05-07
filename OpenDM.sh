@@ -26,26 +26,7 @@ function startchecks() {
         fi
     # If $DISPLAY is set, just run OpenDM's arguments without using startx
     elif [ ! -z "$DISPLAY" ]; then
-        case "$1" in
-            config)
-                opendmconfig
-                ;;
-            *)
-                # Tell user that X session is running and provide option to launch config or exit session
-                RUNNING_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>An X Session is already running.<br/></h2>" --add-combo="" --combo-values="Edit Settings|Exit Session")"
-                case "$RUNNING_SELECTION" in
-                    Edit*)
-                        opendmconfig
-                        ;;
-                    Exit*)
-                        logoutselect
-                        ;;
-                    *)
-                        exit 0
-                        ;;
-                esac
-                ;;
-        esac
+        opendmconfig
     # Exit if not running on $OPENDM_TTY
     else
         echo "OPENDM_TTY is set to $OPENDM_TTY; currently running on $(ps ax | grep $$ | grep -v grep | awk '{ print $2 }')."
@@ -196,73 +177,28 @@ function logoutselect() {
                 --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Logout?<br/></h2>" \
                 --add-combo="" --combo-values="Logout|Restart|Shutdown")"
                 ;;
-            *)
-                if [ ! -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-                    qarma --error --title="OpenDM" --text="Current session was not started with OpenDM!"  --window-icon="/tmp/opendm.png"
-                    exit 1
-                fi
-                LOGOUT_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms \
-                --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Exit Session?<br/></h2>" \
-                --add-combo="" --combo-values="Exit|Logout|Restart|Shutdown")"
-                ;;
         esac
         case "$LOGOUT_CHOICE" in
-            Exit*)
-                # Source currentsession file to get $SESSION_EXIT
-                . /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
-                # Create opendmexit file so user's shell knows to restart OpenDM
-                touch /tmp/opendm/exit
-                # Run $SESSION_EXIT command
-                $SESSION_EXIT
-                ;;
             Logout)
-                # Source currentsession file if it exists else set $SESSION_EXIT to 'exit 0'
-                if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-                    . /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
-                else
-                    SESSION_EXIT="exit 0"
-                fi
                 # Create '/tmp/opendm/logout' for use along with provided example function for running OpenDM automatically on login and after session exit
-                touch /tmp/opendm/logout
-                # Run $SESSION_EXIT; user's shell will take care of logging out if example 'opendmstart' function is used
-                $SESSION_EXIT
+                touch /tmp/opendm/exit
+                exit 0
                 ;;
             Restart)
                 # Set default $OPENDM_REBOOT_CMD if doesn't exist
                 if [ -z "$OPENDM_REBOOT_CMD" ]; then
                     OPENDM_REBOOT_CMD="systemctl reboot"
                 fi
-                # Create '/tmp/opendm/reboot' and make it executable so user's shell can run the configured reboot command
-                echo -e "#!/bin/bash\n$OPENDM_REBOOT_CMD\nexit 0" > /tmp/opendm/reboot
-                chmod +x /tmp/opendm/reboot
-                rm -rf /tmp/opendm/"$USER"/"$OPENDM_TTY"
-                # Source currentsession file if it exists else set $SESSION_EXIT to 'exit 0'
-                if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-                    . /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
-                else
-                    SESSION_EXIT="systemctl reboot"
-                fi
-                # Run $SESSION_EXIT; user's shell will take care of restarting if 'opendmstart' function is used
-                $SESSION_EXIT
+                touch /tmp/opendm/exit
+                $OPENDM_REBOOT_CMD
                 ;;
             Shutdown)
-                # Set default $OPENDM_SHUTDOWM_CMD if doesn't exist
+                # Set default $OPENDM_SHUTDOWN_CMD if doesn't exist
                 if [ -z "$OPENDM_SHUTDOWN_CMD" ]; then
                     OPENDM_SHUTDOWN_CMD="systemctl poweroff"
                 fi
-                # Create '/tmp/opendm/shutdown' and make it executable so user's shell can run the configured shutdown command
-                echo -e "#!/bin/bash\n$OPENDM_SHUTDOWN_CMD\nexit 0" > /tmp/opendm/shutdown
-                chmod +x /tmp/opendm/shutdown
-                rm -rf /tmp/opendm/"$USER"/"$OPENDM_TTY"
-                # Source currentsession file if it exists else set $SESSION_EXIT to 'exit 0'
-                if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-                    . /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
-                else
-                    SESSION_EXIT="systemctl poweroff"
-                fi
-                # Remove leftover files
-                # Run $SESSION_EXIT; user's shell will take care of shutdown if 'opendmstart' function is used
-                $SESSION_EXIT
+                touch /tmp/opendm/exit
+                $OPENDM_SHUTDOWN_CMD
                 ;;
             *)
                 # Exit if no input and currentsession file exists else return to sessionselect
@@ -273,112 +209,6 @@ function logoutselect() {
                 fi
                 ;;
         esac
-}
-
-# Function to provide prompts for exit session, logout, reboot, and shutdown
-function opendmquit() {
-    if [ -z "$DISPLAY" ]; then
-        echo '$DISPLAY is not set; exiting...'
-        exit 1
-    elif [ ! -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-        qarma --error --title="OpenDM" --text="Current session was not started with OpenDM!"  --window-icon="/tmp/opendm.png"
-        exit 1
-    fi
-    case "$1" in
-        exit)
-            # Use qarma to show a prompt asking to exit session
-            qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to exit the current X session?"  --window-icon="/tmp/opendm.png"
-            case $? in
-                0)
-                    # Source currentsession file to get $SESSION_EXIT
-                    . /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
-                    # Create opendmexit file so user's shell knows to restart OpenDM
-                    touch /tmp/opendm/exit
-                    # Run $SESSION_EXIT command
-                    $SESSION_EXIT
-                    ;;
-                1)
-                    exit 0
-                    ;;
-            esac
-            ;;
-        logout)
-            # Use qarma to show a prompt asking to logout
-            qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to logout?"  --window-icon="/tmp/opendm.png"
-            case $? in
-                0)
-                    # Source currentsession file if it exists else set $SESSION_EXIT to 'exit 0'
-                    if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-                        . /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
-                    else
-                        SESSION_EXIT="pkill -SIGTERM -f xinit"
-                    fi
-                    # Create '/tmp/opendm/logout' for use along with provided example function for running OpenDM automatically on login and after session exit
-                    touch /tmp/opendm/logout
-                    # Run $SESSION_EXIT; user's shell will take care of logging out if example 'opendmstart' function is used
-                    $SESSION_EXIT
-                    ;;
-                1)
-                    exit 0
-                    ;;
-            esac
-            ;;
-        reboot)
-            # Use qarma to show a prompt asking to reboot
-            qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to reboot the PC?"  --window-icon="/tmp/opendm.png"
-            case $? in
-                0)
-                    # Set default $OPENDM_REBOOT_CMD if doesn't exist
-                    if [ -z "$OPENDM_REBOOT_CMD" ]; then
-                        OPENDM_REBOOT_CMD="systemctl reboot"
-                    fi
-                    # Create '/tmp/opendm/reboot' and make it executable so user's shell can run the configured reboot command
-                    echo -e "#!/bin/bash\n$OPENDM_REBOOT_CMD\nexit 0" > /tmp/opendm/reboot
-                    chmod +x /tmp/opendm/reboot
-                    rm -rf /tmp/opendm/"$USER"/"$OPENDM_TTY"
-                    # Source currentsession file if it exists else set $SESSION_EXIT to 'exit 0'
-                    if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-                        . /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
-                    else
-                        SESSION_EXIT="pkill -SIGTERM -f xinit"
-                    fi
-                    # Run $SESSION_EXIT; user's shell will take care of restarting if 'opendmstart' function is used
-                    $SESSION_EXIT
-                    ;;
-                1)
-                    exit 0
-                    ;;
-            esac
-            ;;
-        shutdown)
-            # Use qarma to show a prompt asking to shutdown
-            qarma --question --icon-name="/tmp/opendm.png" --title="OpenDM" --text="OpenDM<br><br>Would you like to shutdown the PC?"  --window-icon="/tmp/opendm.png"
-            case $? in
-                0)
-                    # Set default $OPENDM_SHUTDOWM_CMD if doesn't exist
-                    if [ -z "$OPENDM_SHUTDOWN_CMD" ]; then
-                        OPENDM_SHUTDOWN_CMD="systemctl poweroff"
-                    fi
-                    # Create '/tmp/opendm/shutdown' and make it executable so user's shell can run the configured shutdown command
-                    echo -e "#!/bin/bash\n$OPENDM_SHUTDOWN_CMD\nexit 0" > /tmp/opendm/shutdown
-                    chmod +x /tmp/opendm/shutdown
-                    rm -rf /tmp/opendm/"$USER"/"$OPENDM_TTY"
-                    # Source currentsession file if it exists else set $SESSION_EXIT to 'exit 0'
-                    if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/currentsession" ]; then
-                        . /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
-                    else
-                        SESSION_EXIT="pkill -SIGTERM -f xinit"
-                    fi
-                    # Remove leftover files
-                    # Run $SESSION_EXIT; user's shell will take care of shutdown if 'opendmstart' function is used
-                    $SESSION_EXIT
-                    ;;
-                1)
-                    exit 0
-                    ;;
-            esac
-            ;;
-    esac
 }
 
 # Use qarma to provide a list of OpenDM's config options and route user's choice to relevant function
@@ -599,20 +429,6 @@ function xorglogviewer() {
     fi
 }
 
-# TODO better help function
-function opendmhelp() {
-    echo "TODO better help function"
-    echo
-    echo "Arguments:"
-    echo "config            Show OpenDM's config menu"
-    echo "exitmenu          Show OpenDM's exit session menu"
-    echo "exit              Show a prompt asking to exit session"
-    echo "logout            Show a prompt asking to logout"
-    echo "reboot            Show a prompt asking to reboot"
-    echo "shutdown          Show a prompt asking to shutdown"
-}
-
-
 # Check if startx and qarma are in $PATH
 if ! type startx >/dev/null 2>&1; then
     echo "xinit is not installed; exiting..."
@@ -665,33 +481,9 @@ case "$1" in
     --session-select)
         sessionselect
         ;;
-    # Brings up OpenDM's exit session menu
-    exitmenu)
-        logoutselect
-        ;;
-    # Shows a prompt asking to exit session
-    exit)
-        opendmquit "exit"
-        ;;
-    # Shows a prompt asking to logout
-    logout)
-        opendmquit "logout"
-        ;;
-    # Shows a prompt asking to reboot
-    reboot|restart)
-        opendmquit "reboot"
-        ;;
-    # Shows a prompt asking to shutdown
-    shutdown|poweroff)
-        opendmquit "shutdown"
-        ;;
-    # Shows OpenDM's arguments when ran in a terminal
-    help|--help)
-        opendmhelp
-        ;;
     # Any other arguments are routed to startchecks function
     *)
-        startchecks
+        startchecks "$1"
         ;;
 esac
 exit 0
