@@ -71,6 +71,7 @@ function generatesessionlist() {
 
 # function that displays session choice and password entry.
 function supasswordcheck() {
+    (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
     SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Shutdown" \
     --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Enter password for $USER<br/></h2>" \
     --add-combo="" --combo-values=$SESSION_LIST --add-password="")"
@@ -83,6 +84,7 @@ function supasswordcheck() {
     SESSION_CHOICE="$(echo $SESSION_CHOICE | cut -f1 -d'|')"
     # use su -c true "$USER" to check password entry
     if ! echo "$SU_PASSWORD_CHECK" | su -c true "$USER"; then
+        (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
         qarma --title="OpenDM" --error --text="Incorrect password for $USER!"
         exit 1
     fi
@@ -100,6 +102,7 @@ function sessionselect() {
         supasswordcheck || exit 0
     elif [ ! "$OPENDM_AUTOSTART_DEFAULT" = "TRUE" ]; then
         type openbox > /dev/null 2>&1 && ! pgrep openbox && [ -f "$HOME/.config/opendm/.openboxrc.xml" ] && openbox --config-file ~/.config/opendm/.openboxrc.xml & disown
+        (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
         SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Logout" \
         --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>$USER@$HOST<br/></h2>" \
         --add-combo="" --combo-values=$SESSION_LIST)"
@@ -147,6 +150,7 @@ function sessionselect() {
 # Provides a simple qarma entry box to run 'exec' on commands not listed in sessionselect
 # Can be used for other DEs/WMs or even for running something like a browser quick without launching a whole DE/WM along with it
 function othersession() {
+    (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
     OTHER_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="Enter a command to run" --entry-text="xterm")"
     if [ -z "$OTHER_CHOICE" ]; then
         sessionselect
@@ -162,6 +166,7 @@ function logoutselect() {
         # Detect if ran from sessionselect so we know if the 'Exit' option should be shown or not
         case "$1" in
             SHUTDOWN)
+                (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
                 LOGOUT_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Back" \
                 --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Shutdown?<br/></h2>" \
                 --add-combo="" --combo-values="Restart|Shutdown")"
@@ -172,6 +177,7 @@ function logoutselect() {
                 esac
                 ;;
             LOGOUT)
+                (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
                 LOGOUT_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --cancel-label="Back" \
                 --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Logout?<br/></h2>" \
                 --add-combo="" --combo-values="Logout|Restart|Shutdown")"
@@ -215,6 +221,7 @@ function opendmconfig() {
     if [ ! -z "$1" ]; then
         CONFIG_SELECTION="$1"
     else
+        (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
         CONFIG_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Edit Settings<br/></h2>" --add-combo="" --combo-values='Sessions Editor|Add New Session|OpenDM Variables Editor|Autostart Files Editor|Xorg Log Viewer')"
     fi
     case "$CONFIG_SELECTION" in
@@ -256,6 +263,7 @@ function opendmconfig() {
 # $SESSION_NAME cannot contain spaces.  $SESSION_NAME, $SESSION_START, and $SESSON_EXIT are required
 # $SESSION_AUTOSTART is optional; will create autostart script if it does not exist and make it executable
 function addsession() {
+    (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
     SESSION_NAME="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM<br><br>Enter the name of the session (no spaces)")"
     if [ -z "$SESSION_NAME" ]; then
         qarma --title="OpenDM" --error --text="No session name was entered!"
@@ -266,12 +274,14 @@ function addsession() {
         opendmconfig
         exit 0
     fi
+    (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
     SESSION_START="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM<br><br>Enter the command used to start this session")"
     if [ -z "$SESSION_START" ]; then
         qarma --title="OpenDM" --error --text="No session start command was entered!"
         opendmconfig
         exit 0
     fi
+    (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
     SESSION_EXIT="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM<br><br>Enter the command used to exit this session")"
     if [ -z "$SESSION_EXIT" ]; then
         qarma --title="OpenDM" --error --text="No session exit was entered!"
@@ -280,6 +290,7 @@ function addsession() {
     fi
     echo "SESSION_START=\"$SESSION_START\"" > "$HOME"/.config/opendm/xsessions/"$SESSION_NAME"
     echo "SESSION_EXIT=\"$SESSION_EXIT\"" >> "$HOME"/.config/opendm/xsessions/"$SESSION_NAME"
+    (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
     SESSION_AUTOSTART="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --entry --text="OpenDM<br><br>Enter the file name in $HOME/.config/autostart/ for $SESSION_NAME <br>Leave the inputbox blank for no autostart file" --entry-text="autostart.sh")"
     if [ ! -z "$SESSION_AUTOSTART" ]; then
         echo "SESSION_AUTOSTART=\"$SESSION_AUTOSTART\"" >> "$HOME"/.config/opendm/xsessions/"$SESSION_NAME"
@@ -293,6 +304,7 @@ function addsession() {
     else
         echo "SESSION_AUTOSTART=\"\"" >> "$HOME"/.config/opendm/xsessions/"$SESSION_NAME"
     fi
+    (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
     qarma --title="OpenDM" --info --text="$SESSION_NAME has been added!"
     opendmconfig
 }
@@ -305,12 +317,20 @@ function editsessions() {
     done)"
     # Remove last '|' from $SESSION_LIST to prevent blank entry
     SESSION_LIST="$(echo $SESSION_LIST | rev | cut -f2- -d'|' | rev)"
+    (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
     SESSION_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Edit Session<br/></h2>" --add-combo="" --combo-values=$SESSION_LIST)"
     # If no choice, return to config
     if [ -z "$SESSION_CHOICE" ]; then
         opendmconfig
     else
         # qarma text input box to edit chosen session
+        WRES=$(wmctrl -d | cut -f1 -d'x' | rev | cut -f1 -d' ' | rev)
+        HRES=$(wmctrl -d | cut -f2 -d'x' | cut -f1 -d' ')
+        WPOS=$(($WRES/4))
+        HPOS=$(($HRES/4))
+        WSIZE=$(($WRES/2))
+        HSIZE=$(($HRES/2))
+        (sleep 0.5 && wmctrl -F -a "OpenDM" -e 1,$WPOS,$HPOS,$WSIZE,$HSIZE) &
         EDITED_SESSION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --checkbox="Save Changes" --editable --filename=""$HOME"/.config/opendm/xsessions/"$SESSION_CHOICE"")"
         case $? in
             1)
@@ -320,10 +340,12 @@ function editsessions() {
             0)
                 # If no text input, display error and return to config else save changes
                 if [ -z "$EDITED_SESSION" ]; then
+                    (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
                     qarma --title="OpenDM" --error --text="No text was entered!"
                     opendmconfig "Sessions"
                 else
                     echo "$EDITED_SESSION" > "$HOME"/.config/opendm/xsessions/"$SESSION_CHOICE"
+                    (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
                     qarma --title="OpenDM" --info --text="Changes to $SESSION_CHOICE have been saved!"
                     opendmconfig "Sessions"
                 fi
@@ -338,12 +360,20 @@ function editautostart() {
         echo -n "$autostartfile|"
     done)"
     AUTOSTART_LIST="$(echo $AUTOSTART_LIST | rev | cut -f2- -d'|' | rev)"
+    (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
     AUTOSTART_CHOICE="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --forms --text="<h2 align='center'>OpenDM<br/><br/><img src='/tmp/opendm.png' width='64'/><br/><img src='/tmp/opendm.png' width='350' height='0'/><br/><br/>Edit Autostart File<br/></h2>" --add-combo="" --combo-values=$AUTOSTART_LIST)"
     case $? in
         1)
             opendmconfig
             ;;
         0)
+            WRES=$(wmctrl -d | cut -f1 -d'x' | rev | cut -f1 -d' ' | rev)
+            HRES=$(wmctrl -d | cut -f2 -d'x' | cut -f1 -d' ')
+            WPOS=$(($WRES/4))
+            HPOS=$(($HRES/4))
+            WSIZE=$(($WRES/2))
+            HSIZE=$(($HRES/2))
+            (sleep 0.5 && wmctrl -F -a "OpenDM" -e 1,$WPOS,$HPOS,$WSIZE,$HSIZE) &
             EDITED_AUTOSTART="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --checkbox="Save Changes" --editable --filename=""$HOME"/.config/opendm/autostart/"$AUTOSTART_CHOICE"")"
             case $? in
                 1)
@@ -351,10 +381,12 @@ function editautostart() {
                     ;;
                 0)
                     if [ -z "$EDITED_AUTOSTART" ]; then
+                        (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
                         qarma --title="OpenDM" --error --text="No text was entered!"
                         opendmconfig "Autostart"
                     else
                         echo "$EDITED_AUTOSTART" > "$HOME"/.config/opendm/autostart/"$AUTOSTART_CHOICE"
+                        (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
                         qarma --title="OpenDM" --info --text="Changes to $AUTOSTART_CHOICE have been saved!"
                         opendmconfig "Autostart"
                     fi
@@ -366,21 +398,26 @@ function editautostart() {
 
 # Launch a qarma text editor for editing OpenDM's variables.conf and warn user that changes will happen on next login
 function editvariables() {
-    CURRENT_WIDTH=$(xrandr --current | head -n 1 | cut -f2 -d',' | cut -f-1 -d'x' | cut -f3 -d' ')
-    CURRENT_HEIGHT=$(xrandr --current | head -n 1 | cut -f2 -d',' | cut -f2 -d'x' | cut -f2 -d' ')
-    DIALOG_WIDTH=$(echo $CURRENT_WIDTH | awk '{print $1 * .50}' | cut -f1 -d'.')
-    DIALOG_HEIGHT=$(echo $CURRENT_HEIGHT | awk '{print $1 * .50}' | cut -f1 -d'.')
-    EDITED_VARIABLES="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --checkbox="Save Changes" --editable --width=$DIALOG_WIDTH --height=$DIALOG_HEIGHT --filename=""$HOME"/.config/opendm/variables.conf")"
+    WRES=$(wmctrl -d | cut -f1 -d'x' | rev | cut -f1 -d' ' | rev)
+    HRES=$(wmctrl -d | cut -f2 -d'x' | cut -f1 -d' ')
+    WPOS=$(($WRES/4))
+    HPOS=$(($HRES/4))
+    WSIZE=$(($WRES/2))
+    HSIZE=$(($HRES/2))
+    (sleep 0.5 && wmctrl -F -a "OpenDM" -e 1,$WPOS,$HPOS,$WSIZE,$HSIZE) &
+    EDITED_VARIABLES="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --text-info --checkbox="Save Changes" --editable --filename=""$HOME"/.config/opendm/variables.conf")"
     case $? in
         1)
             opendmconfig
             ;;
         0)
             if [ -z "$EDITED_VARIABLES" ]; then
+                (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
                 qarma --title="OpenDM" --error --text="No text was entered!"
                 opendmconfig
             else
                 echo "$EDITED_VARIABLES" > "$HOME"/.config/opendm/variables.conf
+                (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
                 qarma --title="OpenDM" --info --text="Changes to OpenDM Variables have been saved.<br>Changes will take effect on next login!"
                 opendmconfig
             fi
@@ -391,14 +428,18 @@ function editvariables() {
 # Check default Xorg log locations and open a qarma folder selection GUI on the first found dir
 # A qarma text editor is launched to show the chosen Xorg log file
 function xorglogviewer() {
-    CURRENT_WIDTH=$(xrandr --current | head -n 1 | cut -f2 -d',' | cut -f-1 -d'x' | cut -f3 -d' ')
-    CURRENT_HEIGHT=$(xrandr --current | head -n 1 | cut -f2 -d',' | cut -f2 -d'x' | cut -f2 -d' ')
-    DIALOG_WIDTH=$(echo $CURRENT_WIDTH | awk '{print $1 * .50}' | cut -f1 -d'.')
-    DIALOG_HEIGHT=$(echo $CURRENT_HEIGHT | awk '{print $1 * .50}' | cut -f1 -d'.')
+    WRES=$(wmctrl -d | cut -f1 -d'x' | rev | cut -f1 -d' ' | rev)
+    HRES=$(wmctrl -d | cut -f2 -d'x' | cut -f1 -d' ')
+    WPOS=$(($WRES/4))
+    HPOS=$(($HRES/4))
+    WSIZE=$(($WRES/2))
+    HSIZE=$(($HRES/2))
+    (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
     if [ -d "$HOME/.local/share/xorg" ]; then
         XORGLOG_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --file-selection --filename="$HOME/.local/share/xorg/X")"
         if [ ! -z "$XORGLOG_SELECTION" ]; then
-            qarma --title="OpenDM" --text-info --editable --width=$DIALOG_WIDTH --height=$DIALOG_HEIGHT --filename="$XORGLOG_SELECTION"
+            (sleep 0.5 && wmctrl -F -a "OpenDM" -e 1,$WPOS,$HPOS,$WSIZE,$HSIZE) &
+            qarma --title="OpenDM" --text-info --editable --filename="$XORGLOG_SELECTION"
             case $? in
                 0)
                     opendmconfig "Xorg"
@@ -411,8 +452,10 @@ function xorglogviewer() {
             opendmconfig
         fi
     else
+        (sleep 1 && wmctrl -F -a "OpenDM" -b add,above) &
         XORGLOG_SELECTION="$(qarma --window-icon="/tmp/opendm.png" --title="OpenDM" --file-selection --filename="/var/log/X")"
         if [ ! -z "$XORGLOG_SELECTION" ]; then
+            (sleep 0.5 && wmctrl -F -a "OpenDM" -e 1,$WPOS,$HPOS,$WSIZE,$HSIZE) &
             qarma --title="OpenDM" --text-info --editable --width=$DIALOG_WIDTH --height=$DIALOG_HEIGHT --filename="$XORGLOG_SELECTION"
             case $? in
                 0)
