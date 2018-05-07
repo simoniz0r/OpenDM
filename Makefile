@@ -13,7 +13,7 @@ install:
 		@cp -r configs $(DESTDIR)$(PREFIX)/share/opendm/configs
 		@chmod +x OpenDM.sh
 		@cp -p OpenDM.sh $(DESTDIR)$(PREFIX)/share/opendm/opendm
-		@ln -sf $(DESTDIR)$(PREFIX)/share/opendm/opendm $(DESTDIR)$(PREFIX)/bin/opendm
+		@ln -sf $(PREFIX)/share/opendm/opendm $(DESTDIR)$(PREFIX)/bin/opendm
 		@cp -p opendm.desktop $(DESTDIR)$(PREFIX)/share/applications/opendm.desktop
 		@echo 'OpenDM installed!'
 
