@@ -86,7 +86,6 @@ function supasswordcheck() {
         qarma --title="OpenDM" --error --text="Incorrect password for $USER!"
         exit 1
     fi
-    rm -f ~/.cache/opendm-lastsession
 }
 
 # Function that provides session selection based on files in ~/.config/opendm/xsessions and runs 'exec' on the user's choice
@@ -96,7 +95,7 @@ function sessionselect() {
     if [ -f "/tmp/opendm/$USER/$OPENDM_TTY/lastsession" ] || [ -z "$OPENDM_DEFAULT_SESSION" ]; then
         OPENDM_AUTOSTART_DEFAULT="FALSE"
     fi
-    if [ "$OPENDM_PASSWORD_CHECK" = "TRUE" ] && [ ! -f "$HOME/.cache/opendm-lastsession" ]; then
+    if [ "$OPENDM_PASSWORD_CHECK" = "TRUE" ]; then
         type openbox > /dev/null 2>&1 && ! pgrep openbox && [ -f "$HOME/.config/opendm/.openboxrc.xml" ] && openbox --config-file ~/.config/opendm/.openboxrc.xml & disown
         supasswordcheck || exit 0
     elif [ ! "$OPENDM_AUTOSTART_DEFAULT" = "TRUE" ]; then
