@@ -324,8 +324,8 @@ function editsessions() {
         opendmconfig
     else
         # qarma text input box to edit chosen session
-        WRES=$(wmctrl -d | cut -f1 -d'x' | rev | cut -f1 -d' ' | rev)
-        HRES=$(wmctrl -d | cut -f2 -d'x' | cut -f1 -d' ')
+        WRES=$(wmctrl -d | head -n 1 | cut -f1 -d'x' | rev | cut -f1 -d' ' | rev)
+        HRES=$(wmctrl -d | head -n 1 | cut -f2 -d'x' | cut -f1 -d' ')
         WPOS=$(($WRES/4))
         HPOS=$(($HRES/4))
         WSIZE=$(($WRES/2))
@@ -367,8 +367,8 @@ function editautostart() {
             opendmconfig
             ;;
         0)
-            WRES=$(wmctrl -d | cut -f1 -d'x' | rev | cut -f1 -d' ' | rev)
-            HRES=$(wmctrl -d | cut -f2 -d'x' | cut -f1 -d' ')
+            WRES=$(wmctrl -d | head -n 1 | cut -f1 -d'x' | rev | cut -f1 -d' ' | rev)
+            HRES=$(wmctrl -d | head -n 1 | cut -f2 -d'x' | cut -f1 -d' ')
             WPOS=$(($WRES/4))
             HPOS=$(($HRES/4))
             WSIZE=$(($WRES/2))
@@ -398,8 +398,8 @@ function editautostart() {
 
 # Launch a qarma text editor for editing OpenDM's variables.conf and warn user that changes will happen on next login
 function editvariables() {
-    WRES=$(wmctrl -d | cut -f1 -d'x' | rev | cut -f1 -d' ' | rev)
-    HRES=$(wmctrl -d | cut -f2 -d'x' | cut -f1 -d' ')
+    WRES=$(wmctrl -d | head -n 1 | cut -f1 -d'x' | rev | cut -f1 -d' ' | rev)
+    HRES=$(wmctrl -d | head -n 1 | cut -f2 -d'x' | cut -f1 -d' ')
     WPOS=$(($WRES/4))
     HPOS=$(($HRES/4))
     WSIZE=$(($WRES/2))
@@ -428,8 +428,8 @@ function editvariables() {
 # Check default Xorg log locations and open a qarma folder selection GUI on the first found dir
 # A qarma text editor is launched to show the chosen Xorg log file
 function xorglogviewer() {
-    WRES=$(wmctrl -d | cut -f1 -d'x' | rev | cut -f1 -d' ' | rev)
-    HRES=$(wmctrl -d | cut -f2 -d'x' | cut -f1 -d' ')
+    WRES=$(wmctrl -d | head -n 1 | cut -f1 -d'x' | rev | cut -f1 -d' ' | rev)
+    HRES=$(wmctrl -d | head -n 1 | cut -f2 -d'x' | cut -f1 -d' ')
     WPOS=$(($WRES/4))
     HPOS=$(($HRES/4))
     WSIZE=$(($WRES/2))
