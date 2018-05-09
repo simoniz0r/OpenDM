@@ -127,6 +127,7 @@ function sessionselect() {
                 othersession
                 ;;
             *)
+                type openbox > /dev/null 2>&1 && openbox --exit
                 # Source variables stored in chosen session file
                 . "$HOME"/.config/opendm/xsessions/"$SESSION_CHOICE"
                 # source xprofile if it exists
@@ -140,7 +141,6 @@ function sessionselect() {
                 echo "$SESSION_CHOICE" > ~/.config/opendm/lastsession
                 cp "$HOME"/.config/opendm/xsessions/"$SESSION_CHOICE" /tmp/opendm/"$USER"/"$OPENDM_TTY"/currentsession
                 # Run 'exec' on chosen session so that Xorg will exit when chosen session exits
-                type openbox > /dev/null 2>&1 && openbox --exit
                 $SESSION_START
                 ;;
         esac
