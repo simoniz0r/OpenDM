@@ -42,31 +42,12 @@ function generatesessionlist() {
     fi
     # Run a for loop on ~/.config/opendm/xsessions that checks for enabled sessions
     # If OPENDM_DEFAULT_SESSION is set in variables.conf and session file matching name exists, list default session first
-    if [ -f "$HOME/.config/opendm/lastsession" ]; then
+    if [ -f "$HOME/.config/opendm/lastsession" ] && [ -f "$HOME/.config/opendm/xsessions/$(cat ~/.config/opendm/lastsession)" ]; then
         OPENDM_DEFAULT_SESSION="$(cat ~/.config/opendm/lastsession)"
+    elif [ -z "$OPENDM_DEFAULT_SESSION" ]; then
+        OPENDM_DEFAULT_SESSION="$(dir -Cw1 ~/.config/opendm/xsessions | head -n 1)"
     fi
-    SESSION_LIST="$( if [ ! -z "$OPENDM_DEFAULT_SESSION" ] && [ -f "$HOME/.config/opendm/xsessions/$OPENDM_DEFAULT_SESSION" ]; then
-        echo -n "$OPENDM_DEFAULT_SESSION|"
-    else
-        # Set default session to random numbers if it doesn't exist to avoid errors
-        OPENDM_DEFAULT_SESSION="${RANDOM}${RANDOM}${RANDOM}"
-    fi
-    # For loop that looks for enabled session files and lists them by name
-    for sessionfile in $(\dir -C -w 1 "$HOME"/.config/opendm/xsessions); do
-        case "$sessionfile" in
-            # Default session was already added to list, so we do nothing when it is found again
-            "$OPENDM_DEFAULT_SESSION")
-                sleep 0
-                ;;
-            *)
-                # Add each found session to the list
-                echo -n "$sessionfile|"
-                ;;
-        esac
-    done
-    # Add Settings and Other to list
-    echo -n "Settings|"
-    echo -n "Other...")"
+    SESSION_LIST="$OPENDM_DEFAULT_SESSION|$(dir -Cw1 ~/.config/opendm/xsessions | grep -vw "$OPENDM_DEFAULT_SESSION" | tr '\n' '|')Settings|Other..."
 }
 
 # function that displays session choice and password entry.
